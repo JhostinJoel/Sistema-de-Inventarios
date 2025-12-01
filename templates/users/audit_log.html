@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Registro de Auditoría{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2><i class="fas fa-history me-2"></i> Registro de Auditoría</h2>
+    <p class="text-muted">Historial de actividades del sistema</p>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Fecha/Hora</th>
+                        <th>Usuario</th>
+                        <th>Acción</th>
+                        <th>Modelo</th>
+                        <th>Descripción</th>
+                        <th>IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td class="small text-nowrap">{{ log.created_at|date:"d/m/Y H:i:s" }}</td>
+                        <td>
+                            <i class="fas fa-user-circle me-1"></i>
+                            {{ log.user.username|default:"Sistema" }}
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if log.action == 'CREATE' %}bg-success
+                                {% elif log.action == 'UPDATE' %}bg-info
+                                {% elif log.action == 'DELETE' %}bg-danger
+                                {% elif log.action == 'LOGIN' %}bg-primary
+                                {% elif log.action == 'LOGOUT' %}bg-secondary
+                                {% else %}bg-warning{% endif %}">
+                                {{ log.get_action_display }}
+                            </span>
+                        </td>
+                        <td><small>{{ log.model_name|default:"-" }}</small></td>
+                        <td><small>{{ log.description|truncatewords:10 }}</small></td>
+                        <td><small class="text-muted">{{ log.ip_address|default:"-" }}</small></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">No hay registros de auditoría.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                </li>
+                {% endif %}
+
+                <li class="page-item disabled">
+                    <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                </li>
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

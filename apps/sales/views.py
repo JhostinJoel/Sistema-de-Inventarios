@@ -1,0 +1,140 @@
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
+from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.db import transaction
+from .models import Client, Supplier, Sale, SaleDetail
+from .forms import ClientForm, SupplierForm
+from apps.inventory.models import Product
+from decimal import Decimal
+import json
+
+# Client Views
+class ClientListView(LoginRequiredMixin, ListView):
+    model = Client
+    template_name = 'sales/client_list.html'
+    context_object_name = 'clients'
+
+class ClientCreateView(LoginRequiredMixin, CreateView):
+    model = Client
+    form_class = ClientForm
+    template_name = 'sales/client_form.html'
+    success_url = reverse_lazy('sales:client_list')
+
+class ClientUpdateView(LoginRequiredMixin, UpdateView):
+    model = Client
+    form_class = ClientForm
+    template_name = 'sales/client_form.html'
+    success_url = reverse_lazy('sales:client_list')
+
+class ClientDeleteView(LoginRequiredMixin, DeleteView):
+    model = Client
+    template_name = 'sales/client_confirm_delete.html'
+    success_url = reverse_lazy('sales:client_list')
+
+# Supplier Views
+class SupplierListView(LoginRequiredMixin, ListView):
+    model = Supplier
+    template_name = 'sales/supplier_list.html'
+    context_object_name = 'suppliers'
+
+class SupplierCreateView(LoginRequiredMixin, CreateView):
+    model = Supplier
+    form_class = SupplierForm
+    template_name = 'sales/supplier_form.html'
+    success_url = reverse_lazy('sales:supplier_list')
+
+class SupplierUpdateView(LoginRequiredMixin, UpdateView):
+    model = Supplier
+    form_class = SupplierForm
+    template_name = 'sales/supplier_form.html'
+    success_url = reverse_lazy('sales:supplier_list')
+
+class SupplierDeleteView(LoginRequiredMixin, DeleteView):
+    model = Supplier
+    template_name = 'sales/supplier_confirm_delete.html'
+    success_url = reverse_lazy('sales:supplier_list')
+
+# Sales Views
+class SaleListView(LoginRequiredMixin, ListView):
+    model = Sale
+    template_name = 'sales/sale_list.html'
+    context_object_name = 'sales'
+    ordering = ['-date']
+
+class POSView(LoginRequiredMixin, TemplateView):
+    template_name = 'sales/pos.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['products'] = Product.objects.filter(stock__gt=0).select_related('category')
+        context['clients'] = Client.objects.all()
+        return context
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ProcessSaleView(LoginRequiredMixin, TemplateView):
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            client_id = data.get('client_id')
+            items = data.get('items', [])
+            
+            if not items:
+                return JsonResponse({'success': False, 'error': 'No hay productos en el carrito'})
+            
+            # Create sale
+            with transaction.atomic():
+                client = Client.objects.get(id=client_id) if client_id else None
+                
+                # Calculate total
+                total = Decimal('0.00')
+                for item in items:
+                    total += Decimal(str(item['price'])) * Decimal(str(item['quantity']))
+                
+                # Create sale
+                sale = Sale.objects.create(
+                    client=client,
+                    user=request.user,
+                    total=total
+                )
+                
+                # Create sale details and update stock
+                for item in items:
+                    product = Product.objects.get(id=item['product_id'])
+                    quantity = int(item['quantity'])
+                    price = Decimal(str(item['price']))
+                    
+                    # Check stock
+                    if product.stock < quantity:
+                        raise ValueError(f'Stock insuficiente para {product.name}')
+                    
+                    # Create detail
+                    SaleDetail.objects.create(
+                        sale=sale,
+                        product=product,
+                        quantity=quantity,
+                        price=price,
+                        subtotal=price * quantity
+                    )
+                    
+                    # Update stock
+                    product.stock -= quantity
+                    product.save()
+                
+                return JsonResponse({
+                    'success': True,
+                    'sale_id': sale.id,
+                    'message': f'Venta #{sale.id} registrada exitosamente'
+                })
+                
+        except Client.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Cliente no encontrado'})
+        except Product.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Producto no encontrado'})
+        except ValueError as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Error al procesar la venta: {str(e)}'})

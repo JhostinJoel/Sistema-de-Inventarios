@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-4">Panel Principal</h2>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card card-dashboard bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title">Productos Totales</h5>
+                <h2 class="display-4">{{ total_products }}</h2>
+                <i class="fas fa-box fa-2x opacity-50 position-absolute end-0 top-0 m-3"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-dashboard bg-danger text-white">
+            <div class="card-body">
+                <h5 class="card-title">Stock Bajo</h5>
+                <h2 class="display-4">{{ low_stock_products }}</h2>
+                <i class="fas fa-exclamation-triangle fa-2x opacity-50 position-absolute end-0 top-0 m-3"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-dashboard bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">Ventas Hoy</h5>
+                <h2 class="display-4">{{ total_sales_today }}</h2>
+                <i class="fas fa-shopping-cart fa-2x opacity-50 position-absolute end-0 top-0 m-3"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-dashboard bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">Usuarios</h5>
+                <h2 class="display-4">--</h2>
+                <i class="fas fa-users fa-2x opacity-50 position-absolute end-0 top-0 m-3"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Ventas Recientes</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Total</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in recent_sales %}
+                            <tr>
+                                <td>#{{ sale.id }}</td>
+                                <td>{{ sale.client.name }}</td>
+                                <td>${{ sale.total }}</td>
+                                <td>{{ sale.date|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No hay ventas recientes</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Movimientos Recientes</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Tipo</th>
+                                <th>Cant.</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for movement in recent_movements %}
+                            <tr>
+                                <td>{{ movement.product.name }}</td>
+                                <td>
+                                    <span
+                                        class="badge {% if movement.movement_type == 'IN' %}bg-success{% elif movement.movement_type == 'OUT' %}bg-danger{% else %}bg-warning{% endif %}">
+                                        {{ movement.get_movement_type_display }}
+                                    </span>
+                                </td>
+                                <td>{{ movement.quantity }}</td>
+                                <td>{{ movement.created_at|date:"d/m/Y" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No hay movimientos recientes</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+
+{% block title %}Punto de Venta{% endblock %}
+
+{% block extra_css %}
+<style>
+    .product-card {
+        cursor: pointer;
+        transition: all 0.3s;
+        height: 100%;
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .cart-item {
+        border-bottom: 1px solid #dee2e6;
+        padding: 10px 0;
+    }
+
+    .product-grid {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    .cart-container {
+        position: sticky;
+        top: 20px;
+    }
+
+    .stock-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Productos Disponibles</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <input type="text" id="searchProduct" class="form-control" placeholder="Buscar producto...">
+                </div>
+                <div class="product-grid">
+                    <div class="row" id="productList">
+                        {% for product in products %}
+                        <div class="col-md-4 mb-3 product-item" data-name="{{ product.name|lower }}"
+                            data-id="{{ product.id }}">
+                            <div class="card product-card"
+                                onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price }}, {{ product.stock }})">
+                                <div class="card-body position-relative">
+                                    <span class="badge bg-info stock-badge">Stock: {{ product.stock }}</span>
+                                    <h6 class="card-title">{{ product.name }}</h6>
+                                    <p class="text-muted small mb-1">{{ product.category.name }}</p>
+                                    <p class="h5 text-success mb-0">${{ product.price }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-warning">No hay productos disponibles en stock</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="cart-container">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-receipt me-2"></i>Carrito de Compra</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Cliente (Opcional)</label>
+                        <select id="clientSelect" class="form-select">
+                            <option value="">Cliente General</option>
+                            {% for client in clients %}
+                            <option value="{{ client.id }}">{{ client.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div id="cartItems" style="max-height: 300px; overflow-y: auto;">
+                        <p class="text-muted text-center">El carrito está vacío</p>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>Subtotal:</strong>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <h5><strong>Total:</strong></h5>
+                        <h5 class="text-success"><strong id="total">$0.00</strong></h5>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success btn-lg" onclick="processSale()" id="btnPay">
+                            <i class="fas fa-check me-2"></i>Procesar Venta
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="clearCart()">
+                            <i class="fas fa-trash me-2"></i>Limpiar Carrito
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let cart = [];
+
+    // Search products
+    document.getElementById('searchProduct').addEventListener('input', function (e) {
+        const search = e.target.value.toLowerCase();
+        document.querySelectorAll('.product-item').forEach(item => {
+            const name = item.dataset.name;
+            item.style.display = name.includes(search) ? 'block' : 'none';
+        });
+    });
+
+    function addToCart(id, name, price, maxStock) {
+        const existingItem = cart.find(item => item.product_id === id);
+
+        if (existingItem) {
+            if (existingItem.quantity < maxStock) {
+                existingItem.quantity++;
+            } else {
+                alert('No hay más stock disponible de este producto');
+                return;
+            }
+        } else {
+            cart.push({
+                product_id: id,
+                name: name,
+                price: parseFloat(price),
+                quantity: 1,
+                max_stock: maxStock
+            });
+        }
+
+        renderCart();
+    }
+
+    function removeFromCart(index) {
+        cart.splice(index, 1);
+        renderCart();
+    }
+
+    function updateQuantity(index, change) {
+        const item = cart[index];
+        const newQuantity = item.quantity + change;
+
+        if (newQuantity > 0 && newQuantity <= item.max_stock) {
+            item.quantity = newQuantity;
+            renderCart();
+        } else if (newQuantity > item.max_stock) {
+            alert('No hay suficiente stock');
+        }
+    }
+
+    function renderCart() {
+        const cartDiv = document.getElementById('cartItems');
+
+        if (cart.length === 0) {
+            cartDiv.innerHTML = '<p class="text-muted text-center">El carrito está vacío</p>';
+            document.getElementById('subtotal').textContent = '$0.00';
+            document.getElementById('total').textContent = '$0.00';
+            return;
+        }
+
+        let html = '';
+        let total = 0;
+
+        cart.forEach((item, index) => {
+            const subtotal = item.price * item.quantity;
+            total += subtotal;
+
+            html += `
+            <div class="cart-item">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>${item.name}</strong>
+                    <button class="btn btn-sm btn-danger" onclick="removeFromCart(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary" onclick="updateQuantity(${index}, -1)">-</button>
+                        <button class="btn btn-outline-secondary" disabled>${item.quantity}</button>
+                        <button class="btn btn-outline-secondary" onclick="updateQuantity(${index}, 1)">+</button>
+                    </div>
+                    <span>$${item.price} × ${item.quantity} = <strong>$${subtotal.toFixed(2)}</strong></span>
+                </div>
+            </div>
+        `;
+        });
+
+        cartDiv.innerHTML = html;
+        document.getElementById('subtotal').textContent = '$' + total.toFixed(2);
+        document.getElementById('total').textContent = '$' + total.toFixed(2);
+    }
+
+    function clearCart() {
+        if (cart.length > 0 && confirm('¿Deseas limpiar el carrito?')) {
+            cart = [];
+            renderCart();
+        }
+    }
+
+    async function processSale() {
+        if (cart.length === 0) {
+            alert('El carrito está vacío');
+            return;
+        }
+
+        const clientId = document.getElementById('clientSelect').value;
+        const btnPay = document.getElementById('btnPay');
+        btnPay.disabled = true;
+        btnPay.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+
+        try {
+            const response = await fetch('{% url "sales:process_sale" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    client_id: clientId || null,
+                    items: cart
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert(data.message);
+                cart = [];
+                renderCart();
+                document.getElementById('clientSelect').value = '';
+
+                // Reload page to update stock
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (error) {
+            alert('Error de conexión: ' + error);
+        } finally {
+            btnPay.disabled = false;
+            btnPay.innerHTML = '<i class="fas fa-check me-2"></i>Procesar Venta';
+        }
+    }
+</script>
+{% endblock %}
