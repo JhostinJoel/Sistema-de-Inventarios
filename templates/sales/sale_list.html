@@ -33,9 +33,9 @@
                         <td>{{ sale.user.username }}</td>
                         <td class="text-success"><strong>${{ sale.total }}</strong></td>
                         <td>
-                            <button class="btn btn-sm btn-info" onclick="viewDetails({{ sale.id }})">
+                            <a href="{% url 'sales:sale_detail' sale.id %}" class="btn btn-sm btn-info text-white">
                                 <i class="fas fa-eye"></i> Ver
-                            </button>
+                            </a>
                         </td>
                     </tr>
                     {% empty %}
@@ -48,10 +48,4 @@
         </div>
     </div>
 </div>
-
-<script>
-    function viewDetails(saleId) {
-        alert('Ver detalles de venta #' + saleId + ' (próximamente)');
-    }
-</script>
 {% endblock %}
