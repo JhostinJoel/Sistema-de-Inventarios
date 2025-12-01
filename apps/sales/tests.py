@@ -1,3 +1,78 @@
-from django.test import TestCase
+from django.test import TestCase, Client
+from django.urls import reverse
+from django.contrib.auth import get_user_model
+from apps.sales.models import Client as SalesClient, Sale, SaleDetail
+from apps.inventory.models import Product, Category
+import json
 
-# Create your tests here.
+User = get_user_model()
+
+class SalesTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='admin', password='password123', role='ADMIN')
+        self.client = Client()
+        self.client.force_login(self.user)
+        
+        self.category = Category.objects.create(name='Test Cat')
+        self.product = Product.objects.create(
+            code='P001',
+            name='Product 1',
+            price=10.00,
+            cost=5.00,
+            stock=100,
+            category=self.category
+        )
+        self.customer = SalesClient.objects.create(name='John Doe', email='john@test.com')
+
+    def test_client_create(self):
+        url = reverse('sales:client_add')
+        data = {
+            'name': 'Jane Doe',
+            'email': 'jane@test.com',
+            'phone': '123456',
+            'address': 'Address'
+        }
+        response = self.client.post(url, data)
+        self.assertRedirects(response, reverse('sales:client_list'))
+        self.assertTrue(SalesClient.objects.filter(name='Jane Doe').exists())
+
+    def test_process_sale_success(self):
+        url = reverse('sales:process_sale')
+        data = {
+            'client_id': self.customer.id,
+            'items': [
+                {
+                    'product_id': self.product.id,
+                    'quantity': 2,
+                    'price': 10.00
+                }
+            ]
+        }
+        response = self.client.post(url, data, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        
+        # Verify sale created
+        self.assertTrue(Sale.objects.exists())
+        sale = Sale.objects.first()
+        self.assertEqual(sale.total, 20.00)
+        
+        # Verify stock updated
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, 98)
+
+    def test_process_sale_insufficient_stock(self):
+        url = reverse('sales:process_sale')
+        data = {
+            'client_id': self.customer.id,
+            'items': [
+                {
+                    'product_id': self.product.id,
+                    'quantity': 101, # More than stock
+                    'price': 10.00
+                }
+            ]
+        }
+        response = self.client.post(url, data, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()['success'])
+        self.assertIn('Stock insuficiente', response.json()['error'])
