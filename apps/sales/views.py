@@ -97,7 +97,18 @@ class ProcessSaleView(LoginRequiredMixin, TemplateView):
             
             # Create sale
             with transaction.atomic():
-                client = Client.objects.get(id=client_id) if client_id else None
+                # If no client selected, use or create "Cliente General"
+                if client_id:
+                    client = Client.objects.get(id=client_id)
+                else:
+                    client, created = Client.objects.get_or_create(
+                        name='Cliente General',
+                        defaults={
+                            'email': '',
+                            'phone': '',
+                            'address': ''
+                        }
+                    )
                 
                 # Calculate total
                 total = Decimal('0.00')
