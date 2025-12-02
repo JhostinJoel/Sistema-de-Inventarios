@@ -47,18 +47,33 @@ def warehouse_required(function=None, raise_exception=True):
         return actual_decorator(function)
     return actual_decorator
 
+from django.contrib import messages
+from django.shortcuts import redirect
+
 # Mixins for class-based views
 class AdminRequiredMixin(UserPassesTestMixin):
     """Mixin for class-based views that requires ADMIN role."""
     def test_func(self):
         return is_admin(self.request.user)
+    
+    def handle_no_permission(self):
+        messages.error(self.request, "No tienes permisos para acceder a esta página.")
+        return redirect('dashboard:index')
 
 class SellerRequiredMixin(UserPassesTestMixin):
     """Mixin for class-based views that requires ADMIN or SELLER role."""
     def test_func(self):
         return is_seller(self.request.user)
 
+    def handle_no_permission(self):
+        messages.error(self.request, "No tienes permisos para acceder a esta página.")
+        return redirect('dashboard:index')
+
 class WarehouseRequiredMixin(UserPassesTestMixin):
     """Mixin for class-based views that requires ADMIN or WAREHOUSE role."""
     def test_func(self):
         return is_warehouse(self.request.user)
+
+    def handle_no_permission(self):
+        messages.error(self.request, "No tienes permisos para acceder a esta página.")
+        return redirect('dashboard:index')
