@@ -1,0 +1,20 @@
+{
+  "build": {
+    "command": "./build.sh"
+  },
+  "services": [
+    {
+      "type": "web",
+      "name": "sistema-de-inventarios",
+      "env": "python",
+      "buildCommand": "./build.sh",
+      "startCommand": "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --log-level debug",
+      "envVars": [
+        {
+          "key": "PYTHON_VERSION",
+          "value": "3.11.9"
+        }
+      ]
+    }
+  ]
+}
