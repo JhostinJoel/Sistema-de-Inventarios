@@ -2,10 +2,26 @@
 
 Sistema completo de gestión de inventario con punto de venta, reportes y chatbot con IA desarrollado en Django.
 
+
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![Django](https://img.shields.io/badge/Django-5.2-green)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-purple)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
+
+## 🚀 ¿Qué es este proyecto y cómo transforma tu negocio?
+
+Este **Sistema de Inventario Inteligente** es una solución integral diseñada para modernizar y optimizar la gestión operativa de cualquier negocio de retail o comercio. No es solo un software de inventario; es un **aliado estratégico** que combina la potencia de la gestión tradicional con la inteligencia artificial.
+
+### 💡 ¿Qué hace por ti?
+- **Centraliza el Control**: Unifica inventario, ventas, clientes y proveedores en una sola plataforma accesible desde cualquier lugar.
+- **Automatiza Procesos**: Reduce el error humano automatizando el cálculo de stock, totales de venta y reportes financieros.
+- **Asistencia con IA**: Incorpora un chatbot inteligente (Google Gemini) que responde preguntas sobre tu negocio en lenguaje natural (ej. "¿Qué productos se están agotando?").
+
+### 📈 ¿Cómo mejora tu negocio?
+1.  **Elimina Pérdidas**: Al tener un control exacto del stock en tiempo real, evitas el robo hormiga y la pérdida de mercancía por desorganización.
+2.  **Agiliza las Ventas**: El Punto de Venta (POS) es rápido e intuitivo, reduciendo el tiempo de espera de tus clientes y mejorando su experiencia de compra.
+3.  **Toma de Decisiones Basada en Datos**: Con reportes detallados de ingresos y productos más vendidos, puedes decidir qué reponer y qué promocionar, maximizando tus ganancias.
+4.  **Ahorro de Tiempo**: Deja de usar cuadernos o excels complicados. El sistema hace los cálculos por ti, permitiéndote enfocarte en hacer crecer tu negocio.
 
 ## 📋 Tabla de Contenidos
 
@@ -346,25 +362,35 @@ Sistema-de-Inventarios/
 
 ## 🔐 Usuarios y Roles
 
-### Roles Disponibles
+El sistema implementa un control de acceso basado en roles (RBAC) para garantizar la seguridad y la correcta segregación de funciones.
 
-| Rol | Permisos | Acceso |
-|-----|----------|--------|
-| **Administrador** | Todos los permisos | Dashboard, Inventario, Ventas, Usuarios, Reportes |
-| **Vendedor** | Ventas y consultas | Dashboard, POS, Ver inventario, Ventas |
-| **Almacén** | Gestión de stock | Dashboard, Inventario, Movimientos |
+### Roles Definidos
+
+| Rol | Código | Descripción | Permisos Principales |
+|-----|--------|-------------|----------------------|
+| **Administrador** | `ADMIN` | Acceso total al sistema | • Gestión de Usuarios (CRUD)<br>• Ver Logs de Auditoría<br>• Configuración del Sistema<br>• Acceso a todos los módulos (Ventas, Inventario, Reportes) |
+| **Vendedor** | `SELLER` | Encargado de ventas | • Realizar Ventas (POS)<br>• Ver Inventario (Solo lectura)<br>• Ver Clientes<br>• **Restricción**: No puede modificar stock ni usuarios |
+| **Almacenista** | `WAREHOUSE` | Gestión de inventario | • Gestión de Productos (Crear, Editar)<br>• Gestión de Categorías y Almacenes<br>• Registrar Movimientos (Entradas/Salidas)<br>• **Restricción**: No puede acceder a ventas ni usuarios |
+
+### Permisos Técnicos
+
+El sistema utiliza mixins y decoradores personalizados para validar los permisos:
+
+- `AdminRequiredMixin` / `@admin_required`: Solo permite acceso a usuarios con rol `ADMIN`.
+- `SellerRequiredMixin` / `@seller_required`: Permite acceso a `ADMIN` y `SELLER`.
+- `WarehouseRequiredMixin` / `@warehouse_required`: Permite acceso a `ADMIN` y `WAREHOUSE`.
 
 ### Usuario por Defecto
 
-Después de la instalación, puedes usar:
+Después de la instalación, puedes usar el superusuario creado:
 
 ```
 Usuario: admin
-Contraseña: password123
+Contraseña: password123 (o la que hayas definido)
 Rol: Administrador
 ```
 
-> ⚠️ **IMPORTANTE**: Cambia la contraseña inmediatamente en producción
+> ⚠️ **IMPORTANTE**: Por seguridad, crea usuarios individuales para cada empleado y asigna el rol mínimo necesario.
 
 ## 🌐 API y Endpoints
 
