@@ -14,24 +14,24 @@ from decimal import Decimal
 import json
 
 # Client Views
-class ClientListView(LoginRequiredMixin, ListView):
+class ClientListView(LoginRequiredMixin, SellerRequiredMixin, ListView):
     model = Client
     template_name = 'sales/client_list.html'
     context_object_name = 'clients'
 
-class ClientCreateView(LoginRequiredMixin, CreateView):
+class ClientCreateView(LoginRequiredMixin, SellerRequiredMixin, CreateView):
     model = Client
     form_class = ClientForm
     template_name = 'sales/client_form.html'
     success_url = reverse_lazy('sales:client_list')
 
-class ClientUpdateView(LoginRequiredMixin, UpdateView):
+class ClientUpdateView(LoginRequiredMixin, SellerRequiredMixin, UpdateView):
     model = Client
     form_class = ClientForm
     template_name = 'sales/client_form.html'
     success_url = reverse_lazy('sales:client_list')
 
-class ClientDeleteView(LoginRequiredMixin, DeleteView):
+class ClientDeleteView(LoginRequiredMixin, SellerRequiredMixin, DeleteView):
     model = Client
     template_name = 'sales/client_confirm_delete.html'
     success_url = reverse_lazy('sales:client_list')
