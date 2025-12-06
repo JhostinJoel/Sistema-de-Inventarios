@@ -1,5 +1,6 @@
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from apps.users.permissions import SellerRequiredMixin
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.http import JsonResponse
@@ -59,13 +60,13 @@ class SupplierDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('sales:supplier_list')
 
 # Sales Views
-class SaleListView(LoginRequiredMixin, ListView):
+class SaleListView(LoginRequiredMixin, SellerRequiredMixin, ListView):
     model = Sale
     template_name = 'sales/sale_list.html'
     context_object_name = 'sales'
     ordering = ['-date']
 
-class SaleDetailView(LoginRequiredMixin, DetailView):
+class SaleDetailView(LoginRequiredMixin, SellerRequiredMixin, DetailView):
     model = Sale
     template_name = 'sales/sale_detail.html'
     context_object_name = 'sale'
@@ -75,7 +76,7 @@ class SaleDetailView(LoginRequiredMixin, DetailView):
         context['sale_details'] = self.object.details.all()
         return context
 
-class POSView(LoginRequiredMixin, TemplateView):
+class POSView(LoginRequiredMixin, SellerRequiredMixin, TemplateView):
     template_name = 'sales/pos.html'
     
     def get_context_data(self, **kwargs):
@@ -85,7 +86,7 @@ class POSView(LoginRequiredMixin, TemplateView):
         return context
 
 @method_decorator(csrf_exempt, name='dispatch')
-class ProcessSaleView(LoginRequiredMixin, TemplateView):
+class ProcessSaleView(LoginRequiredMixin, SellerRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
@@ -160,7 +161,7 @@ class ProcessSaleView(LoginRequiredMixin, TemplateView):
         except Exception as e:
             return JsonResponse({'success': False, 'error': f'Error al procesar la venta: {str(e)}'}, status=400)
 
-class ReportView(LoginRequiredMixin, TemplateView):
+class ReportView(LoginRequiredMixin, SellerRequiredMixin, TemplateView):
     template_name = 'sales/report.html'
     
     def get_context_data(self, **kwargs):

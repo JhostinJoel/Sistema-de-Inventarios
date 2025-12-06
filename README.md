@@ -380,17 +380,17 @@ El sistema utiliza mixins y decoradores personalizados para validar los permisos
 - `SellerRequiredMixin` / `@seller_required`: Permite acceso a `ADMIN` y `SELLER`.
 - `WarehouseRequiredMixin` / `@warehouse_required`: Permite acceso a `ADMIN` y `WAREHOUSE`.
 
-### Usuario por Defecto
+### Usuarios de Prueba (Demo)
 
-Después de la instalación, puedes usar el superusuario creado:
+Para facilitar las pruebas, el sistema incluye los siguientes usuarios preconfigurados:
 
-```
-Usuario: admin
-Contraseña: password123 (o la que hayas definido)
-Rol: Administrador
-```
+| Rol | Usuario | Contraseña |
+|-----|---------|------------|
+| **Administrador** | `admin` | `admin` |
+| **Administrador** | `jhostin` | `admin` |
+| **Vendedor** | `Greisy123` | `user` |
 
-> ⚠️ **IMPORTANTE**: Por seguridad, crea usuarios individuales para cada empleado y asigna el rol mínimo necesario.
+> ⚠️ **Nota**: Estas contraseñas son para el entorno de demostración. En producción, asegúrate de cambiarlas.
 
 ## 🌐 API y Endpoints
 
