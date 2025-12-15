@@ -1,0 +1,291 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Inventario{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .sidebar {
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            background-color: #343a40;
+            padding-top: 20px;
+            color: white;
+            transition: all 0.3s;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .sidebar a {
+            padding: 12px 25px;
+            text-decoration: none;
+            font-size: 0.95rem;
+            color: #adb5bd;
+            display: block;
+            transition: 0.3s;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            color: white;
+            background-color: #495057;
+        }
+
+        .sidebar .brand {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .sidebar-heading {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                margin-left: -250px;
+            }
+
+            .sidebar.active {
+                margin-left: 0;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        .card-dashboard {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar" id="sidebar">
+        <div class="brand">
+            <i class="fas fa-box-open me-2"></i>Inventario
+        </div>
+        <a href="{% url 'dashboard:index' %}"
+            class="{% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+            <i class="fas fa-home me-2"></i>Dashboard
+        </a>
+
+        <div class="sidebar-heading mt-3 px-3 mb-1">Inventario</div>
+        <a href="{% url 'inventory:product_list' %}"
+            class="{% if request.resolver_match.url_name == 'product_list' %}active{% endif %}">
+            <i class="fas fa-boxes me-2"></i>Productos
+        </a>
+        <a href="{% url 'inventory:category_list' %}"
+            class="{% if request.resolver_match.url_name == 'category_list' %}active{% endif %}">
+            <i class="fas fa-tags me-2"></i>Categorías
+        </a>
+        <a href="{% url 'inventory:warehouse_list' %}"
+            class="{% if request.resolver_match.url_name == 'warehouse_list' %}active{% endif %}">
+            <i class="fas fa-warehouse me-2"></i>Almacenes
+        </a>
+
+        <div class="sidebar-heading mt-3 px-3 mb-1">Ventas</div>
+        <a href="{% url 'sales:pos' %}" class="{% if request.resolver_match.url_name == 'pos' %}active{% endif %}">
+            <i class="fas fa-cash-register me-2"></i>Punto de Venta
+        </a>
+        <a href="{% url 'sales:sale_list' %}"
+            class="{% if request.resolver_match.url_name == 'sale_list' %}active{% endif %}">
+            <i class="fas fa-shopping-cart me-2"></i>Ventas
+        </a>
+        <a href="{% url 'sales:client_list' %}"
+            class="{% if request.resolver_match.url_name == 'client_list' %}active{% endif %}">
+            <i class="fas fa-users me-2"></i>Clientes
+        </a>
+        <a href="{% url 'sales:supplier_list' %}"
+            class="{% if request.resolver_match.url_name == 'supplier_list' %}active{% endif %}">
+            <i class="fas fa-truck me-2"></i>Proveedores
+        </a>
+        <a href="{% url 'sales:sales_report' %}"
+            class="{% if request.resolver_match.url_name == 'sales_report' %}active{% endif %}">
+            <i class="fas fa-chart-line me-2"></i>Reportes
+        </a>
+
+        {% if user.is_superuser %}
+        <div class="sidebar-heading mt-3 px-3 mb-1">Administración</div>
+        <a href="{% url 'users:user_list' %}"
+            class="{% if request.resolver_match.url_name == 'user_list' %}active{% endif %}">
+            <i class="fas fa-user-cog me-2"></i>Usuarios
+        </a>
+        <a href="{% url 'users:audit_log' %}"
+            class="{% if request.resolver_match.url_name == 'audit_log' %}active{% endif %}">
+            <i class="fas fa-history me-2"></i>Auditoría
+        </a>
+        {% endif %}
+
+        <div class="mt-auto p-3">
+            <a href="{% url 'users:logout' %}" class="text-danger">
+                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 shadow-sm rounded">
+            <div class="container-fluid">
+                <button class="btn btn-outline-secondary me-3" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <span class="navbar-brand mb-0 h1">Sistema de Inventario</span>
+
+                <div class="ms-auto d-flex align-items-center">
+                    <div class="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle fa-lg me-1"></i> {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'users:profile' %}">Perfil</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="{% url 'users:logout' %}">Cerrar Sesión</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        {% if messages %}
+        {% for message in messages %}
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    text: "{{ message }}",
+                    icon: "{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}",
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            });
+        </script>
+        {% endfor %}
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- Chat Widget -->
+    <div id="chat-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 1050;">
+        <button id="chat-toggle" class="btn btn-primary rounded-circle shadow-lg" style="width: 60px; height: 60px;">
+            <i class="fas fa-comment-dots fa-lg"></i>
+        </button>
+
+        <div id="chat-box" class="card shadow-lg d-none"
+            style="position: absolute; bottom: 70px; right: 0; width: 350px; height: 400px;">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Asistente IA</h5>
+                <button type="button" class="btn-close btn-close-white" id="chat-close"></button>
+            </div>
+            <div class="card-body overflow-auto" id="chat-messages" style="height: 300px;">
+                <div class="text-center text-muted small">Hazme una pregunta sobre tu inventario.</div>
+            </div>
+            <div class="card-footer p-2">
+                <div class="input-group">
+                    <input type="text" id="chat-input" class="form-control" placeholder="Escribe tu mensaje...">
+                    <button class="btn btn-primary" id="chat-send">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        document.getElementById('sidebarToggle').addEventListener('click', function () {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+
+        // Chat Widget Logic
+        const chatToggle = document.getElementById('chat-toggle');
+        const chatBox = document.getElementById('chat-box');
+        const chatClose = document.getElementById('chat-close');
+        const chatInput = document.getElementById('chat-input');
+        const chatSend = document.getElementById('chat-send');
+        const chatMessages = document.getElementById('chat-messages');
+
+        chatToggle.addEventListener('click', () => chatBox.classList.remove('d-none'));
+        chatClose.addEventListener('click', () => chatBox.classList.add('d-none'));
+
+        function appendMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `mb-2 p-2 rounded ${sender === 'user' ? 'bg-light text-end ms-auto' : 'bg-primary text-white me-auto'}`;
+            div.style.maxWidth = '80%';
+            div.textContent = text;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            appendMessage(text, 'user');
+            chatInput.value = '';
+
+            try {
+                const response = await fetch('{% url "chatbot:api" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ message: text })
+                });
+
+                const data = await response.json();
+                appendMessage(data.response || data.error, 'bot');
+            } catch (error) {
+                appendMessage('Error de conexión', 'bot');
+            }
+        }
+
+        chatSend.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

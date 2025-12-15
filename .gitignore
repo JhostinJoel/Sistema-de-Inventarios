@@ -1,0 +1,44 @@
+# Python
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.venv
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Migrations (optional, comentar si quieres subir migraciones)
+# */migrations/*.py
+# !*/migrations/__init__.py
+
+# Test and utility scripts
+test_db_connection.py
+check_tables.py
+db_backup.sqlite3
+
+# Deployment artifacts (optional, keep db_dump.json if needed for migration)
+# db_dump.json
+
