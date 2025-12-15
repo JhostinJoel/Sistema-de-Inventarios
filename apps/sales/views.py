@@ -181,3 +181,75 @@ class ReportView(LoginRequiredMixin, SellerRequiredMixin, TemplateView):
         context['total_income'] = sum(sale.total for sale in sales)
         
         return context
+
+# Exports
+import openpyxl
+from django.http import HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from django.contrib.auth.decorators import login_required
+from apps.users.permissions import seller_required
+
+@login_required
+@seller_required
+def export_sales_excel(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    sales = Sale.objects.all().order_by('-date')
+    if start_date and end_date:
+        sales = sales.filter(date__date__range=[start_date, end_date])
+        
+    response = HttpResponse(content_type='application/ms-excel')
+    response['Content-Disposition'] = 'attachment; filename="reporte_ventas.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Ventas"
+    
+    # Header
+    headers = ['ID', 'Fecha', 'Cliente', 'Vendedor', 'Total']
+    ws.append(headers)
+    
+    for sale in sales:
+        ws.append([
+            sale.id,
+            sale.date.strftime('%d/%m/%Y %H:%M'),
+            sale.client.name if sale.client else 'General',
+            sale.user.username,
+            float(sale.total)
+        ])
+        
+    wb.save(response)
+    return response
+
+@login_required
+@seller_required
+def export_sales_pdf(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    sales = Sale.objects.all().order_by('-date')
+    if start_date and end_date:
+        sales = sales.filter(date__date__range=[start_date, end_date])
+        
+    template_path = 'sales/report_pdf.html'
+    context = {
+        'sales': sales,
+        'start_date': start_date,
+        'end_date': end_date,
+        'total_sales_count': sales.count(),
+        'total_income': sum(sale.total for sale in sales),
+    }
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="reporte_ventas.pdf"'
+    
+    template = get_template(template_path)
+    html = template.render(context)
+    
+    pisa_status = pisa.CreatePDF(html, dest=response)
+    
+    if pisa_status.err:
+        return HttpResponse('We had some errors <pre>' + html + '</pre>')
+    return response
